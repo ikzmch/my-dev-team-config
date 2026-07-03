@@ -1,0 +1,693 @@
+# Shared model registry - the single source of truth for every LLM the two
+# apps (my-dev-team and my-dev-team-vs-code) may route to.
+#
+# Do NOT edit the generated files in the consuming repos by hand:
+#   my-dev-team/src/devteam/config/tools/llms.yaml
+#   my-dev-team-vs-code/src/engine/config/models/*.md
+# Edit this file instead and run:  python scripts/sync_models.py
+#
+# Schema and conventions are documented in README.md. In short, per model:
+#   id              stable registry id (also the vs-code file name and model id)
+#   label           user-facing display name
+#   provider        which backend hosts the model (one primary provider)
+#   also_via        optional extra providers serving the same model (Azure mirrors)
+#   model           provider-specific model name (Ollama tag or API model id)
+#   context_window  tokens; omit when unknown (consumers then skip window checks)
+#   thinking        Ollama only: whether the reasoning stream is enabled
+#   triage_only     vs-code only: eligible for the triage classifier, never real work
+#   capabilities    unified vocabulary, dense absolute scores in [0, 1]
+#   complexity_fit  score multiplier per task complexity; the unique argmax also
+#                   defines the vs-code tier (low=simple, medium=moderate, high=complex)
+#   pricing         USD per million tokens; null until seeded from LiteLLM (TODO 3.1),
+#                   0 for local models
+#   notes           prose note, becomes the vs-code .md body
+#
+# Capability scores are curated on one dense scale (the fresher
+# my-dev-team-vs-code convention). Models marked "provisional" in their notes
+# carry estimated scores that have not been verified end-to-end.
+
+version: 1
+
+models:
+    # ------------------------------------------------------------- anthropic
+    - id: anthropic-opus
+      label: Claude Opus 4.8 (Anthropic)
+      provider: anthropic
+      also_via: [azure-anthropic]
+      model: claude-opus-4-8
+      context_window: 200000
+      capabilities:
+          reasoning: 0.98
+          code-generation: 0.97
+          code-analysis: 0.97
+          classification: 0.9
+          planning: 0.97
+          fast-utility: 0.4
+          structured-output: 0.95
+          long-context: 0.85
+      complexity_fit: {low: 0.3, medium: 0.8, high: 1.0}
+      pricing: {input: null, output: null}
+      notes: |
+          Anthropic's most capable model: the strongest choice for hard reasoning,
+          multi-step planning, and demanding code work. Slower and paid, so reserve it
+          for the work that benefits. Requires an Anthropic API key.
+
+    - id: anthropic-sonnet
+      label: Claude Sonnet 4.6 (Anthropic)
+      provider: anthropic
+      also_via: [azure-anthropic]
+      model: claude-sonnet-4-6
+      context_window: 200000
+      capabilities:
+          reasoning: 0.9
+          code-generation: 0.92
+          code-analysis: 0.92
+          classification: 0.9
+          planning: 0.9
+          fast-utility: 0.7
+          structured-output: 0.92
+          long-context: 0.85
+      complexity_fit: {low: 0.7, medium: 1.0, high: 0.8}
+      pricing: {input: null, output: null}
+      notes: |
+          The balanced Anthropic model: near-Opus quality at meaningfully lower latency
+          and cost. A strong all-round default for planning and code when a cloud model
+          is wanted. Requires an Anthropic API key.
+
+    - id: anthropic-haiku
+      label: Claude Haiku 4.5 (Anthropic)
+      provider: anthropic
+      also_via: [azure-anthropic]
+      model: claude-haiku-4-5-20251001
+      context_window: 200000
+      capabilities:
+          reasoning: 0.72
+          code-generation: 0.72
+          code-analysis: 0.72
+          classification: 0.85
+          planning: 0.7
+          fast-utility: 0.9
+          structured-output: 0.85
+          long-context: 0.85
+      complexity_fit: {low: 1.0, medium: 0.6, high: 0.3}
+      pricing: {input: null, output: null}
+      notes: |
+          Anthropic's fast, low-cost model: quick and reliable for lighter answers and
+          structured decisions when a cloud model is preferred over a local one.
+          Requires an Anthropic API key.
+
+    # ---------------------------------------------------------------- openai
+    - id: openai-gpt55
+      label: GPT-5.5 (OpenAI)
+      provider: openai
+      also_via: [azure-openai]
+      model: gpt-5.5
+      capabilities:
+          reasoning: 0.98
+          code-generation: 0.95
+          code-analysis: 0.95
+          classification: 0.9
+          planning: 0.96
+          fast-utility: 0.4
+          structured-output: 0.95
+          long-context: 0.85
+      complexity_fit: {low: 0.4, medium: 0.9, high: 1.0}
+      pricing: {input: null, output: null}
+      notes: |
+          OpenAI's flagship reasoning model: top-tier reasoning and planning with
+          strong code work. Slower and paid, so reserve it for demanding tasks.
+          Requires an OpenAI API key. Capability scores are provisional registry
+          estimates and the context window is unverified, so it is left unset.
+
+    - id: openai-gpt51-codex-mini
+      label: GPT-5.1 Codex Mini (OpenAI)
+      provider: openai
+      model: gpt-5.1-codex-mini
+      capabilities:
+          reasoning: 0.85
+          code-generation: 0.92
+          code-analysis: 0.9
+          classification: 0.8
+          planning: 0.82
+          fast-utility: 0.75
+          structured-output: 0.9
+          long-context: 0.85
+      complexity_fit: {low: 0.7, medium: 1.0, high: 0.9}
+      pricing: {input: null, output: null}
+      notes: |
+          OpenAI's compact code specialist: strong generation and editing of code at
+          lower cost and latency than the flagship. Requires an OpenAI API key.
+          Capability scores are provisional registry estimates and the context window
+          is unverified, so it is left unset.
+
+    - id: openai-gpt41
+      label: GPT-4.1 (OpenAI)
+      provider: openai
+      model: gpt-4.1
+      context_window: 1047576
+      capabilities:
+          reasoning: 0.9
+          code-generation: 0.9
+          code-analysis: 0.9
+          classification: 0.88
+          planning: 0.88
+          fast-utility: 0.75
+          structured-output: 0.92
+          long-context: 1.0
+      complexity_fit: {low: 0.7, medium: 1.0, high: 0.8}
+      pricing: {input: null, output: null}
+      notes: |
+          OpenAI's flagship general-purpose model: strong all-round reasoning, improved
+          coding and instruction following, and reliable structured output at moderate
+          latency. Requires an OpenAI API key.
+
+    - id: openai-gpt41-mini
+      label: GPT-4.1 Mini (OpenAI)
+      provider: openai
+      model: gpt-4.1-mini
+      context_window: 1047576
+      capabilities:
+          reasoning: 0.7
+          code-generation: 0.7
+          code-analysis: 0.7
+          classification: 0.82
+          planning: 0.68
+          fast-utility: 0.88
+          structured-output: 0.85
+          long-context: 0.95
+      complexity_fit: {low: 1.0, medium: 0.6, high: 0.3}
+      pricing: {input: null, output: null}
+      notes: |
+          OpenAI's fast, low-cost GPT-4.1 variant: good for quick utility work and
+          structured decisions, with the same very large context window as GPT-4.1.
+          Requires an OpenAI API key. Capability scores are provisional registry
+          estimates.
+
+    # ---------------------------------------------------- azure-openai extras
+    - id: azure-gpt54-mini
+      label: GPT-5.4 Mini (Azure OpenAI)
+      provider: azure-openai
+      model: gpt-5.4-mini
+      capabilities:
+          reasoning: 0.75
+          code-generation: 0.75
+          code-analysis: 0.75
+          classification: 0.84
+          planning: 0.72
+          fast-utility: 0.9
+          structured-output: 0.86
+          long-context: 0.85
+      complexity_fit: {low: 1.0, medium: 0.6, high: 0.3}
+      pricing: {input: null, output: null}
+      notes: |
+          A fast, low-cost GPT-5 family variant available as an Azure OpenAI
+          deployment. Good for quick utility work when the workload must stay on
+          Azure. Capability scores are provisional registry estimates and the context
+          window is unverified, so it is left unset.
+
+    # ---------------------------------------------------------------- google
+    - id: gemini-3-1-pro
+      label: Gemini 3.1 Pro (Google)
+      provider: google
+      model: gemini-3.1-pro-preview
+      context_window: 1048576
+      capabilities:
+          reasoning: 0.96
+          code-generation: 0.93
+          code-analysis: 0.93
+          classification: 0.9
+          planning: 0.94
+          fast-utility: 0.45
+          structured-output: 0.93
+          long-context: 0.97
+      complexity_fit: {low: 0.4, medium: 0.9, high: 1.0}
+      pricing: {input: null, output: null}
+      notes: |
+          Google's strongest reasoning model: a top choice for hard multi-step reasoning,
+          planning, and large-context work, with a roughly 1M-token window that suits
+          reading a lot at once. Slower and paid, so reserve it for the demanding work.
+          Requires a Google (Gemini) API key.
+
+    - id: gemini-3-5-flash
+      label: Gemini 3.5 Flash (Google)
+      provider: google
+      model: gemini-3.5-flash
+      context_window: 1048576
+      capabilities:
+          reasoning: 0.85
+          code-generation: 0.85
+          code-analysis: 0.85
+          classification: 0.88
+          planning: 0.83
+          fast-utility: 0.85
+          structured-output: 0.88
+          long-context: 0.95
+      complexity_fit: {low: 0.7, medium: 1.0, high: 0.8}
+      pricing: {input: null, output: null}
+      notes: |
+          Google's balanced workhorse: fast and inexpensive while still strong on coding
+          and agentic tasks, with a large (~1M-token) context window. A good default for
+          most work when routing to Google. Requires a Google (Gemini) API key.
+
+    - id: gemini-3-1-flash-lite
+      label: Gemini 3.1 Flash-Lite (Google)
+      provider: google
+      model: gemini-3.1-flash-lite
+      context_window: 1048576
+      capabilities:
+          reasoning: 0.6
+          code-generation: 0.6
+          code-analysis: 0.6
+          classification: 0.82
+          planning: 0.6
+          fast-utility: 0.95
+          structured-output: 0.82
+          long-context: 0.9
+      complexity_fit: {low: 1.0, medium: 0.6, high: 0.3}
+      pricing: {input: null, output: null}
+      notes: |
+          Google's fastest, cheapest Gemini: built for high-volume, latency-sensitive
+          work - quick classification and simple tasks - at a fraction of the cost of the
+          Pro model, while keeping a large context window. Requires a Google (Gemini) API key.
+
+    # ------------------------------------------------------------------ groq
+    - id: groq-gpt-oss-120b
+      label: GPT-OSS 120B (Groq)
+      provider: groq
+      model: openai/gpt-oss-120b
+      context_window: 131072
+      capabilities:
+          reasoning: 0.86
+          code-generation: 0.83
+          code-analysis: 0.83
+          classification: 0.86
+          planning: 0.84
+          fast-utility: 0.92
+          structured-output: 0.86
+          long-context: 0.75
+      complexity_fit: {low: 0.6, medium: 0.9, high: 1.0}
+      pricing: {input: null, output: null}
+      notes: |
+          OpenAI's large open-weight model served on Groq's fast inference: strong
+          all-round reasoning, coding, and structured output at very low latency. A good
+          cloud default when speed matters. Requires a Groq API key.
+
+    - id: groq-qwen3-32b
+      label: Qwen3 32B (Groq)
+      provider: groq
+      model: qwen/qwen3-32b
+      context_window: 131072
+      capabilities:
+          reasoning: 0.82
+          code-generation: 0.8
+          code-analysis: 0.8
+          classification: 0.82
+          planning: 0.8
+          fast-utility: 0.93
+          structured-output: 0.8
+          long-context: 0.75
+      complexity_fit: {low: 0.5, medium: 1.0, high: 0.8}
+      pricing: {input: null, output: null}
+      notes: |
+          Qwen3 32B served on Groq's fast inference: a capable general-purpose model with
+          solid reasoning and coding at very low latency. Requires a Groq API key.
+
+    - id: groq-llama31-8b-instant
+      label: Llama 3.1 8B Instant (Groq)
+      provider: groq
+      model: llama-3.1-8b-instant
+      context_window: 131072
+      capabilities:
+          reasoning: 0.45
+          code-generation: 0.45
+          code-analysis: 0.45
+          classification: 0.75
+          planning: 0.4
+          fast-utility: 0.98
+          structured-output: 0.65
+          long-context: 0.6
+      complexity_fit: {low: 1.0, medium: 0.5, high: 0.2}
+      pricing: {input: null, output: null}
+      notes: |
+          Meta's Llama 3.1 8B on Groq: the cheapest, fastest Groq entry, fit for quick
+          label-style decisions and short transforms, not for real reasoning or code
+          work. Requires a Groq API key. Capability scores are provisional registry
+          estimates.
+
+    # ---------------------------------------------------------------- ollama
+    - id: qwen3-8b
+      label: Qwen3 8B (Ollama)
+      provider: ollama
+      model: qwen3:8b
+      context_window: 40960
+      thinking: true
+      capabilities:
+          reasoning: 0.6
+          code-generation: 0.5
+          code-analysis: 0.5
+          classification: 0.8
+          planning: 0.6
+          fast-utility: 0.8
+          structured-output: 0.8
+          long-context: 0.35
+      complexity_fit: {low: 1.0, medium: 0.7, high: 0.4}
+      pricing: {input: 0, output: 0}
+      notes: |
+          Balanced mid-size generalist. Fast, reliable at classification and structured
+          JSON output; the workhorse for routing-style decisions.
+
+    - id: qwen3-14b
+      label: Qwen3 14B (Ollama)
+      provider: ollama
+      model: qwen3:14b
+      context_window: 40960
+      thinking: true
+      capabilities:
+          reasoning: 0.75
+          code-generation: 0.6
+          code-analysis: 0.6
+          classification: 0.85
+          planning: 0.8
+          fast-utility: 0.6
+          structured-output: 0.8
+          long-context: 0.35
+      complexity_fit: {low: 0.6, medium: 1.0, high: 0.7}
+      pricing: {input: 0, output: 0}
+      notes: |
+          Larger generalist with noticeably stronger multi-step reasoning and planning
+          than the 8B, at the cost of latency.
+
+    - id: qwen3-coder
+      label: Qwen3 Coder (Ollama)
+      provider: ollama
+      model: qwen3-coder:30b
+      context_window: 262144
+      thinking: false
+      capabilities:
+          reasoning: 0.7
+          code-generation: 0.9
+          code-analysis: 0.9
+          classification: 0.6
+          planning: 0.7
+          fast-utility: 0.5
+          structured-output: 0.7
+          long-context: 0.9
+      complexity_fit: {low: 0.5, medium: 0.8, high: 1.0}
+      pricing: {input: 0, output: 0}
+      notes: |
+          Code-specialised model. The strongest choice for generating and editing code;
+          slower and less suited to quick routing decisions.
+
+    - id: gemma3-4b
+      label: Gemma 3 4B (Ollama)
+      provider: ollama
+      model: gemma3:4b
+      context_window: 128000
+      thinking: false
+      capabilities:
+          reasoning: 0.3
+          code-generation: 0.3
+          code-analysis: 0.3
+          classification: 0.6
+          planning: 0.3
+          fast-utility: 1
+          structured-output: 0.5
+          long-context: 0.75
+      complexity_fit: {low: 1.0, medium: 0.4, high: 0.2}
+      pricing: {input: 0, output: 0}
+      notes: |
+          Small, very fast generalist. Good enough for quick label-style decisions when
+          latency matters most; weak at multi-step reasoning and code.
+
+    # -------------------------------------------------------------- llamacpp
+    - id: llamacpp-local
+      label: Qwen2.5 Coder 1.5B (llama.cpp)
+      provider: llamacpp
+      model: ggml-org/Qwen2.5-Coder-1.5B-Instruct-Q8_0-GGUF
+      context_window: 32768
+      triage_only: true
+      capabilities:
+          reasoning: 0.4
+          code-generation: 0.5
+          code-analysis: 0.5
+          classification: 0.7
+          planning: 0.4
+          fast-utility: 0.85
+          structured-output: 0.7
+          long-context: 0.3
+      complexity_fit: {low: 1.0, medium: 0.3, high: 0.1}
+      pricing: {input: 0, output: 0}
+      notes: |
+          A small Qwen2.5-Coder model served locally by `llama-server` (llama.cpp) over its
+          OpenAI-compatible endpoint - no Ollama install required. At 1.5B it is fast and
+          cheap, fit for the lightweight triage/classification role but not for real work.
+
+          It is marked `triageOnly`, so Auto only ever routes the internal triage step to
+          it - never the planner, answerer, or executor, even when no other model is
+          available (those then fail with a "no model" hint rather than doing real work on
+          a 1.5B model). To use it for actual work anyway, pin it explicitly with
+          `myDevTeam.model` set to `llamacpp-local` or `provider:llamacpp`; a pin always
+          wins over the `triageOnly` guard.
+
+          The `model` field is the id sent to `llama-server`; it matches what the server
+          advertises at `/v1/models` for the `-hf ggml-org/Qwen2.5-Coder-1.5B-Instruct-Q8_0-GGUF`
+          launch. In its usual single-model mode the server answers regardless of the name,
+          so change this if you serve a different model.
+
+    # -------------------------------------------------------------- deepseek
+    - id: deepseek-v4-pro
+      label: DeepSeek V4 Pro (DeepSeek)
+      provider: deepseek
+      model: deepseek-v4-pro
+      context_window: 1048576
+      capabilities:
+          reasoning: 0.95
+          code-generation: 0.92
+          code-analysis: 0.92
+          classification: 0.9
+          planning: 0.94
+          fast-utility: 0.45
+          structured-output: 0.88
+          long-context: 0.9
+      complexity_fit: {low: 0.6, medium: 1.0, high: 0.9}
+      pricing: {input: null, output: null}
+      notes: |
+          DeepSeek's highest-performance model (DeepSeek-V4-Pro): deeper reasoning and
+          stronger code for hard multi-step problems, with a 1M-token context window.
+          Supports both non-thinking and thinking (default) modes. Costs more and runs
+          slower than V4 Flash, so reserve it for work that benefits. Requires a DeepSeek
+          API key.
+
+    - id: deepseek-v4-flash
+      label: DeepSeek V4 Flash (DeepSeek)
+      provider: deepseek
+      model: deepseek-v4-flash
+      context_window: 1048576
+      capabilities:
+          reasoning: 0.88
+          code-generation: 0.9
+          code-analysis: 0.9
+          classification: 0.88
+          planning: 0.87
+          fast-utility: 0.78
+          structured-output: 0.88
+          long-context: 0.9
+      complexity_fit: {low: 1.0, medium: 0.8, high: 0.6}
+      pricing: {input: null, output: null}
+      notes: |
+          DeepSeek's fast, low-cost flagship (DeepSeek-V4-Flash): strong coding and
+          all-round reasoning at a very low price, with a huge 1M-token context window.
+          Supports both non-thinking (default) and thinking modes. A capable cloud
+          default when cost matters. Requires a DeepSeek API key.
+
+    # ------------------------------------------------------------------- zai
+    - id: zai-glm-5-2
+      label: GLM-5.2 (Z.AI)
+      provider: zai
+      model: glm-5.2
+      context_window: 1000000
+      capabilities:
+          reasoning: 0.95
+          code-generation: 0.96
+          code-analysis: 0.96
+          classification: 0.9
+          planning: 0.94
+          fast-utility: 0.45
+          structured-output: 0.9
+          long-context: 0.95
+      complexity_fit: {low: 0.4, medium: 0.9, high: 1.0}
+      pricing: {input: null, output: null}
+      notes: |
+          Z.AI's flagship GLM-5.2: state-of-the-art long-horizon agentic coding and
+          multi-step reasoning, with a 1M-token context window for project-level work.
+          The strongest model Z.AI ships. Reserve it for hard, code-heavy tasks. Requires
+          a Z.AI API key.
+
+    - id: zai-glm-4-7-flash
+      label: GLM-4.7-Flash (Z.AI)
+      provider: zai
+      model: glm-4.7-flash
+      context_window: 200000
+      capabilities:
+          reasoning: 0.86
+          code-generation: 0.88
+          code-analysis: 0.88
+          classification: 0.87
+          planning: 0.85
+          fast-utility: 0.82
+          structured-output: 0.86
+          long-context: 0.85
+      complexity_fit: {low: 1.0, medium: 0.7, high: 0.4}
+      pricing: {input: null, output: null}
+      notes: |
+          Z.AI's lightweight, free GLM-4.7-Flash: a fast, low-latency member of the
+          GLM-4.7 family with a 200K-token context window. Strong all-round coding and
+          reasoning when cost and speed matter more than peak capability. Requires a Z.AI
+          API key.
+
+    # ------------------------------------------------------------------ grok
+    - id: grok-4-3
+      label: Grok 4.3 (xAI)
+      provider: grok
+      model: grok-4.3
+      capabilities:
+          reasoning: 0.97
+          code-generation: 0.94
+          code-analysis: 0.94
+          classification: 0.9
+          planning: 0.95
+          fast-utility: 0.45
+          structured-output: 0.92
+          long-context: 0.85
+      complexity_fit: {low: 0.4, medium: 0.9, high: 1.0}
+      pricing: {input: null, output: null}
+      notes: |
+          xAI's strongest Grok: frontier-level reasoning, planning and code work.
+          Slower and paid, so reserve it for demanding tasks. Requires an xAI API key.
+          Capability scores are provisional registry estimates and the context window
+          is unverified, so it is left unset.
+
+    - id: grok-4-1-fast
+      label: Grok 4.1 Fast (xAI)
+      provider: grok
+      model: grok-4.1-fast
+      context_window: 2000000
+      capabilities:
+          reasoning: 0.88
+          code-generation: 0.9
+          code-analysis: 0.9
+          classification: 0.87
+          planning: 0.87
+          fast-utility: 0.85
+          structured-output: 0.88
+          long-context: 0.95
+      complexity_fit: {low: 0.7, medium: 1.0, high: 0.8}
+      pricing: {input: null, output: null}
+      notes: |
+          xAI's balanced workhorse: strong all-round planning and code at low latency,
+          with a 2M-token context window for large inputs. Requires an xAI API key.
+          Capability scores are provisional registry estimates.
+
+    - id: grok-code-fast-1
+      label: Grok Code Fast 1 (xAI)
+      provider: grok
+      model: grok-code-fast-1
+      context_window: 256000
+      capabilities:
+          reasoning: 0.7
+          code-generation: 0.8
+          code-analysis: 0.78
+          classification: 0.75
+          planning: 0.68
+          fast-utility: 0.92
+          structured-output: 0.8
+          long-context: 0.75
+      complexity_fit: {low: 1.0, medium: 0.6, high: 0.3}
+      pricing: {input: null, output: null}
+      notes: |
+          xAI's fast, low-cost coding model: quick code edits and utility work at
+          very low latency. Requires an xAI API key. Capability scores are provisional
+          registry estimates.
+
+    # --------------------------------------------------------------- mistral
+    - id: mistral-medium
+      label: Mistral Medium (Mistral)
+      provider: mistral
+      model: mistral-medium-latest
+      context_window: 128000
+      capabilities:
+          reasoning: 0.88
+          code-generation: 0.9
+          code-analysis: 0.9
+          classification: 0.86
+          planning: 0.88
+          fast-utility: 0.7
+          structured-output: 0.88
+          long-context: 0.75
+      complexity_fit: {low: 0.5, medium: 1.0, high: 0.9}
+      pricing: {input: null, output: null}
+      notes: |
+          Mistral's balanced flagship tier: strong all-round planning, reasoning and
+          code at moderate cost. Requires a Mistral API key. Capability scores are
+          provisional registry estimates.
+
+    - id: mistral-codestral
+      label: Codestral (Mistral)
+      provider: mistral
+      model: codestral-latest
+      context_window: 256000
+      capabilities:
+          reasoning: 0.72
+          code-generation: 0.9
+          code-analysis: 0.88
+          classification: 0.7
+          planning: 0.65
+          fast-utility: 0.85
+          structured-output: 0.8
+          long-context: 0.8
+      complexity_fit: {low: 0.8, medium: 1.0, high: 0.7}
+      pricing: {input: null, output: null}
+      notes: |
+          Mistral's code specialist: fast, focused code generation and completion with
+          a 256K-token context window. Requires a Mistral API key. Capability scores
+          are provisional registry estimates.
+
+    - id: mistral-small
+      label: Mistral Small (Mistral)
+      provider: mistral
+      model: mistral-small-latest
+      context_window: 128000
+      capabilities:
+          reasoning: 0.65
+          code-generation: 0.65
+          code-analysis: 0.65
+          classification: 0.8
+          planning: 0.62
+          fast-utility: 0.9
+          structured-output: 0.8
+          long-context: 0.75
+      complexity_fit: {low: 1.0, medium: 0.6, high: 0.3}
+      pricing: {input: null, output: null}
+      notes: |
+          Mistral's fast, low-cost tier: quick utility work and structured decisions.
+          Requires a Mistral API key. Capability scores are provisional registry
+          estimates.
+
+# Compound (pseudo) providers exist only in my-dev-team's llms.yaml: each
+# member is copied from its registry entry with an explicit provider field, so
+# the factory dispatches to the real backend. Members reference registry ids.
+compound_providers:
+    free:
+        description: 'compound: groq free tier + ollama local models'
+        members:
+            - groq-qwen3-32b
+            - groq-gpt-oss-120b
+            - groq-llama31-8b-instant
+            - qwen3-coder
+
+# LiteLLM model-name aliases, passed through into my-dev-team's llms.yaml
+# for cost tracking.
+aliases:
+    'google_genai/*': 'gemini/*'
+    'google_vertexai/*': 'vertex_ai/*'
+    'groq/compound': 'openai/gpt-oss-120b'
