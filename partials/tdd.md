@@ -1,0 +1,13 @@
+---
+name: tdd
+description: Test-driven development - write the tests with the change and let them drive it.
+---
+
+Practice strict test-driven development:
+
+1. Read the acceptance criteria for the work.
+2. Write comprehensive unit tests covering those criteria.
+3. Write the implementation designed specifically to pass your tests.
+4. Deliver the corresponding test file alongside every implementation file.
+5. Strictly follow the standard file naming conventions of the language and
+   testing framework so the test runner discovers your tests automatically.
